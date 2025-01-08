@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16.0
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: cloud_db
+    ports:
+      - "5432:5432"
+    command: postgres -c max_connections=200
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: server
+    environment:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: 1234
+      DB_NAME: cloud_db
+    ports:
+      - "8181:8181"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
